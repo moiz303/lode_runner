@@ -26,23 +26,6 @@ class Game:
         self.cell_size = cell_size
 
 
-class Camera:
-    # зададим начальный сдвиг камеры
-    def __init__(self):
-        self.dx = 0
-        self.dy = 0
-
-    # сдвинуть объект obj на смещение камеры
-    def apply(self, obj):
-        obj.rect.x += self.dx
-        obj.rect.y += self.dy
-
-    # позиционировать камеру на объекте target
-    def update(self, target: pygame.sprite):
-        self.dx = -(target.rect.x + target.rect.w // 2 - target.rect.width // 2)
-        self.dy = -(target.rect.y + target.rect.h // 2 - target.rect.height // 2)
-
-
 def load_image(name):
     fullname = os.path.join('data', name)
     # если файл не существует, то выходим
@@ -62,30 +45,36 @@ def main():
 
     # создадим спрайты
     player = pygame.sprite.Sprite(all_sprites)
+    block = pygame.sprite.Sprite(all_sprites)
 
     # определим их вид
     player.image = load_image("player.xcf")
     player.rect = player.image.get_rect()
+    block.image = load_image("block.xcf")
+    block.rect = block.image.get_rect()
 
     # и их расположение
     player.rect.x = 0
     player.rect.y = 235
+    block.rect.x = 505
+    block.rect.y = 305
 
     board = Game()
-    camera = Camera()
     board.set_view(5, 5, 50)
 
+    dist = 50
     running = True
     while running:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            # Проверка на нажатие клавиш движения
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RIGHT:
+                    player.rect.left += dist
+                elif event.key == pygame.K_LEFT:
+                    player.rect.left -= dist
+            # Проверка на выход из игры
+            elif event.type == pygame.QUIT:
                 running = False
-
-        # изменяем ракурс камеры
-        camera.update(player)
-        # обновляем положение всех спрайтов
-        for sprite in all_sprites:
-            camera.apply(sprite)
 
         screen.fill((0, 0, 0), (5, 5, screen.get_size()[0] - 10, screen.get_size()[1] - 10))
         board.render(screen)
