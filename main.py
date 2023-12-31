@@ -26,6 +26,23 @@ class Game:
         self.cell_size = cell_size
 
 
+class Camera:
+    # зададим начальный сдвиг камеры
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    # сдвинуть объект obj на смещение камеры
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    # позиционировать камеру на объекте target
+    def update(self, target: pygame.sprite):
+        self.dx = -(target.rect.x + target.rect.w // 2 - target.rect.width // 2)
+        self.dy = -(target.rect.y + target.rect.h // 2 - target.rect.height // 2)
+
+
 def load_image(name):
     fullname = os.path.join('data', name)
     # если файл не существует, то выходим
@@ -55,6 +72,7 @@ def main():
     player.rect.y = 235
 
     board = Game()
+    camera = Camera()
     board.set_view(5, 5, 50)
 
     running = True
@@ -62,7 +80,14 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        screen.fill(pygame.Color('orange'), (5, 5, screen.get_size()[0] - 10, screen.get_size()[1] - 10))
+
+        # изменяем ракурс камеры
+        camera.update(player)
+        # обновляем положение всех спрайтов
+        for sprite in all_sprites:
+            camera.apply(sprite)
+
+        screen.fill((0, 0, 0), (5, 5, screen.get_size()[0] - 10, screen.get_size()[1] - 10))
         board.render(screen)
         all_sprites.draw(screen)
         pygame.display.flip()
