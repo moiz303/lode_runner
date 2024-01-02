@@ -1,29 +1,8 @@
 import pygame
 import os
 import sys
-
-
-class Game:
-    # создание поля
-    def __init__(self):
-        self.board = [[0] * 20 for _ in range(7)]
-        # значения по умолчанию
-        self.left = 10
-        self.top = 10
-        self.cell_size = 30
-
-    def render(self, screen):
-        for y in range(7):
-            for x in range(20):
-                pygame.draw.rect(screen, pygame.Color(255, 255, 255), (
-                    x * self.cell_size + self.left, y * self.cell_size + self.top, self.cell_size,
-                    self.cell_size), 1)
-
-    # настройка внешнего вида
-    def set_view(self, left, top, cell_size):
-        self.left = left
-        self.top = top
-        self.cell_size = cell_size
+import random
+import generate
 
 
 def load_image(name):
@@ -38,29 +17,42 @@ def load_image(name):
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((800, 360))
+    screen = pygame.display.set_mode((810, 410))
     pygame.display.set_caption('Lode Runner')
+
+    board = generate.Game()
+    board.set_view(5, 5, 50)
+
     # создадим группу, содержащую все спрайты
     all_sprites = pygame.sprite.Group()
 
     # создадим спрайты
     player = pygame.sprite.Sprite(all_sprites)
-    block = pygame.sprite.Sprite(all_sprites)
 
     # определим их вид
     player.image = load_image("player.xcf")
+
+    # размеры
     player.rect = player.image.get_rect()
-    block.image = load_image("block.xcf")
-    block.rect = block.image.get_rect()
 
-    # и их расположение
+    # и их расположение - игрок
     player.rect.x = 0
-    player.rect.y = 235
-    block.rect.x = 505
-    block.rect.y = 305
+    player.rect.y = 285
 
-    board = Game()
-    board.set_view(5, 5, 50)
+    # блоки
+    for i in range(1, 8, 2):
+        for j in range(16):
+            generate.Blocks(j, i, all_sprites)
+
+    # лестницы
+    for i in range(1, 6, 2):
+        for j in range(2):
+            x = random.randint(0, 16)
+            generate.Ladder(x, i, all_sprites)
+            generate.Ladder(x, i + 1, all_sprites)
+    # монетки
+    for i in range(3):
+        generate.Money(all_sprites)
 
     dist = 50
     running = True
@@ -72,6 +64,10 @@ def main():
                     player.rect.left += dist
                 elif event.key == pygame.K_LEFT:
                     player.rect.left -= dist
+                elif event.key == pygame.K_DOWN:
+                    player.rect.top += dist
+                elif event.key == pygame.K_UP:
+                    player.rect.top -= dist
             # Проверка на выход из игры
             elif event.type == pygame.QUIT:
                 running = False
