@@ -1,58 +1,99 @@
 import pygame
-import os
 import sys
 import random
 import generate
+import levels
 
 
-def load_image(name):
-    fullname = os.path.join('data', name)
-    # если файл не существует, то выходим
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    image = pygame.image.load(fullname)
-    return image
+pygame.init()
+screen = pygame.display.set_mode((810, 410))
+pygame.display.set_caption('Lode Runner')
+clock = pygame.time.Clock()
+
+
+FPS = 50
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def start_screen():
+    global board, clicked_button
+    intro_text = ["Начнём игру",
+                  "Чтобы сгенерировать уровень нажмите 1",
+                  "Чтобы выбрать из сохранённых нажмите 2"]
+
+    fon = pygame.transform.scale(generate.load_image('fon.jpg'), (800, 400))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 100
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    board = generate.Game()
+                    board.set_view(5, 5, 50)
+                    clicked_button = 1
+                    return  # начинаем игру
+                elif event.key == pygame.K_2:
+                    board = generate.Game()
+                    board.set_view(5, 5, 50)
+                    clicked_button = 2
+                    return  # начнём игру
+                else:
+                    print('error')
+                    continue  # Неправильный ввод, пробуем ещё
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 def main():
-    pygame.init()
-    screen = pygame.display.set_mode((810, 410))
-    pygame.display.set_caption('Lode Runner')
-
-    board = generate.Game()
-    board.set_view(5, 5, 50)
+    start_screen()
 
     # создадим группу, содержащую все спрайты
     all_sprites = pygame.sprite.Group()
 
-    # создадим спрайты
-    player = pygame.sprite.Sprite(all_sprites)
+    # Если нажата кнопка 1, то генерируем уровень
+    if clicked_button == 1:
+        # создадим блоки,
+        for i in range(1, 8, 2):
+            for j in range(16):
+                generate.Blocks(j, i, all_sprites)
 
-    # определим их вид
-    player.image = load_image("player.xcf")
+        # лестницы
+        for i in range(1, 6, 2):
+            for j in range(2):
+                x = random.randint(1, 16)
+                generate.Ladder(x, i, all_sprites)
+                generate.Ladder(x, i + 1, all_sprites)
 
-    # размеры
-    player.rect = player.image.get_rect()
+        # и монетки
+        for i in range(3):
+            generate.Money(random.randint(1, 16) ,
+                           random.randrange(0, 6, 2), all_sprites)
 
-    # и их расположение - игрок
-    player.rect.x = 0
-    player.rect.y = 285
+    # Если нажата кнопка 2, то выбираем из сохранённых
+    else:
+        level = levels.load_level('level.txt')
+        for y in range(len(level)):
+            for x in range(len(level[y])):
+                levels.return_all(level[y][x], x, y, all_sprites)
 
-    # блоки
-    for i in range(1, 8, 2):
-        for j in range(16):
-            generate.Blocks(j, i, all_sprites)
-
-    # лестницы
-    for i in range(1, 6, 2):
-        for j in range(2):
-            x = random.randint(0, 16)
-            generate.Ladder(x, i, all_sprites)
-            generate.Ladder(x, i + 1, all_sprites)
-    # монетки
-    for i in range(3):
-        generate.Money(all_sprites)
+    # создадим игрока
+    player = generate.Player(all_sprites)
 
     dist = 50
     running = True

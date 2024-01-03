@@ -1,9 +1,20 @@
-import pygame
 import random
-from main import load_image
+import pygame
+import os
+import sys
 
 # создадим группу, содержащую все спрайты
 all_sprites = pygame.sprite.Group()
+
+
+def load_image(name):
+    fullname = os.path.join('data', name)
+    # если файл не существует, то выходим
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+    return image
 
 
 class Game:
@@ -29,31 +40,45 @@ class Game:
 
 
 class Blocks(pygame.sprite.Sprite):
-    image = load_image("block.xcf")
-
-    def __init__(self, x, y, *group):
-        super().__init__(*group)
-        self.image = Blocks.image
+    def __init__(self, x, y, group):
+        super().__init__(group)
+        self.image = load_image("block.xcf")
         self.rect = self.image.get_rect()
         self.rect.x = x * 50 + 5
         self.rect.y = y * 50 + 5
 
+    def return_all(self):
+        return self.image, self.rect
+
 
 class Money(pygame.sprite.Sprite):
-    image = load_image("money.xcf")
+    def __init__(self, x, y, group):
+        super().__init__(group)
+        self.image = load_image("money.xcf")
+        self.rect = self.image.get_rect()
+        self.rect.x = x * 50 + 5
+        self.rect.y = y * 50 + 5
 
-    def __init__(self, *group):
-        super().__init__(*group)
-        self.rect = Money.image.get_rect()
-        self.rect.x = random.randint(0, 16) * 50 + 5
-        self.rect.y = random.randrange(0, 6, 2) * 50 + 5
+    def return_all(self):
+        return self.image, self.rect
 
 
 class Ladder(pygame.sprite.Sprite):
-    image = load_image("ladder.xcf")
-
-    def __init__(self, x, y, *group):
-        super().__init__(*group)
-        self.rect = Ladder.image.get_rect()
+    def __init__(self, x, y, group):
+        super().__init__(group)
+        self.image = load_image("ladder.xcf")
+        self.rect = self.image.get_rect()
         self.rect.x = x * 50 + 5
         self.rect.y = y * 50 + 5
+
+    def return_all(self):
+        return self.image, self.rect
+
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self, group):
+        super().__init__(group)
+        self.image = load_image("player.xcf")
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 285
