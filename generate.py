@@ -42,6 +42,7 @@ class Blocks(pygame.sprite.Sprite):
     def __init__(self, x, y, group):
         super().__init__(group)
         self.image = load_image("block.xcf")
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.rect.x = x * 50 + 5
         self.rect.y = y * 50 + 5
@@ -54,6 +55,7 @@ class Money(pygame.sprite.Sprite):
     def __init__(self, x, y, group):
         super().__init__(group)
         self.image = load_image("money.xcf")
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.rect.x = x * 50 + 5
         self.rect.y = y * 50 + 5
@@ -66,6 +68,7 @@ class Ladder(pygame.sprite.Sprite):
     def __init__(self, x, y, group):
         super().__init__(group)
         self.image = load_image("ladder.xcf")
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
         self.rect.x = x * 50 + 5
         self.rect.y = y * 50 + 5
@@ -78,6 +81,8 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, group):
         super().__init__(group)
         self.image = load_image("player.xcf")
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
-        self.rect.x = 0
-        self.rect.y = 285
+        self.rect.x = 5
+        self.rect.y = 304
+
