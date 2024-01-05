@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 import random
 import generate
 import levels
@@ -60,6 +61,33 @@ def start_screen():
         clock.tick(FPS)
 
 
+def take_level():
+    intro_text = [f'Нажмите {os.listdir(os.path.join("levels")).index(i) + 1}, чтобы выбрать уровень ' + i[:-4]
+                  for i in os.listdir(os.path.join("levels"))]
+
+    fon = pygame.transform.scale(generate.load_image('fon.jpg'), (800, 400))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 40)
+    text_coord = 100
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                return pygame.key.get_pressed().index(True)
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 def main():
     start_screen()
 
@@ -87,12 +115,21 @@ def main():
 
     # Если нажата кнопка 2, то выбираем из сохранённых
     else:
-        level = levels.load_level('level.txt')
-        for y in range(len(level)):
-            for x in range(len(level[y])):
-                levels.return_all(level[y][x], x, y, all_sprites)
+        running = True
+        while running:
+            # "Защита от дурака" - проверка, что выбранный уровень существует
+            try:
+                num = take_level() - 30
+                level = levels.load_level(os.listdir(os.path.join("levels"))[num])
+                # Выстраивание уровня по блокам
+                for y in range(len(level)):
+                    for x in range(len(level[y])):
+                        levels.return_all(level[y][x], x, y, all_sprites)
+                running = False
+            except IndexError:
+                print('Нажмите корректную клавишу')
 
-    # создадим игрока
+    # под конец создадим игрока
     player = generate.Player(all_sprites)
 
     dist = 50
