@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/PyGameProject.iml" filepath="$PROJECT_DIR$/.idea/PyGameProject.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../PycharmProjectsPyQT/.idea/PycharmProjectsPyQT.iml" filepath="$PROJECT_DIR$/../PycharmProjectsPyQT/.idea/PycharmProjectsPyQT.iml" />
     </modules>
   </component>
 </project>

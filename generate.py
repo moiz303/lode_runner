@@ -20,9 +20,13 @@ class Game:
     # создание поля
     def __init__(self):
         # значения по умолчанию
-        self.left = 10
-        self.top = 10
-        self.cell_size = 30
+        self.left = 5
+        self.top = 5
+        self.cell_size = 50
+        self.selected_cell = ()
+        self.width = 810
+        self.height = 410
+        self.player_cords = [5, 304]
 
     def render(self, screen):
         for y in range(8):
@@ -36,6 +40,41 @@ class Game:
         self.left = left
         self.top = top
         self.cell_size = cell_size
+
+    # cell - кортеж (x, y)
+    def on_click(self, cell):
+        y, x = cell
+        if self.selected_cell == (x, y):
+            self.selected_cell = None
+            return
+        if self.board[y][x] == 1:
+            self.selected_cell = x, y
+        elif self.selected_cell is None:
+            self.board[y][y] = 1
+        else:
+            x2, y2 = self.selected_cell
+            if self.has_path(x2, y2, x, y):
+                self.path = self.get_path(x2, y2, x, y)
+
+    def get_cell(self):
+        cell_x = (self.player_cords[0] - self.left) // self.cell_size
+        cell_y = (self.player_cords[1] - self.top) // self.cell_size
+        if cell_x < 0 or cell_x >= self.width or cell_y < 0 or cell_y >= self.height:
+            return None
+        return cell_x, cell_y
+
+    def get_click(self):
+        cell = self.get_cell()
+        if cell and cell < (self.width, self.height):
+            self.on_click(cell)
+
+
+def update(cords):
+    Game.player_cords = cords
+
+
+def get_field(field):
+    Game.board = field
 
 
 class Blocks(pygame.sprite.Sprite):
@@ -86,3 +125,12 @@ class Player(pygame.sprite.Sprite):
         self.rect.x = 5
         self.rect.y = 304
 
+
+class Bots(pygame.sprite.Sprite):
+    def __init__(self, group):
+        super().__init__(group)
+        self.image = load_image("bot.xcf")
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_rect()
+        self.rect.x = 405
+        self.rect.y = 5

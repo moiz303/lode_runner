@@ -5,6 +5,7 @@ import os
 import random
 import generate
 import levels
+import bots
 
 
 pygame.init()
@@ -16,10 +17,14 @@ dist = 50
 # создадим группу, содержащую все спрайты
 all_sprites = pygame.sprite.Group()
 
-# создадим список мест, где уже есть блоки
-filled = {}
+# создадим словарь мест, где уже есть блоки
+filled = {(5, 305): 'air', (405, 5): 'air'}
+
+# И список самих блоков для бота
+table = []
 
 blocks, ladders, moneys = pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
+robots = pygame.sprite.Group()
 
 
 FPS = 50
@@ -30,7 +35,7 @@ def terminate():
     sys.exit()
 
 
-def start_screen():
+def first_title():
     global board, clicked_button
     intro_text = ["Начнём игру",
                   "Чтобы сгенерировать уровень нажмите 1",
@@ -38,7 +43,7 @@ def start_screen():
 
     fon = pygame.transform.scale(generate.load_image('fon.jpg'), (800, 400))
     screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
+    font = pygame.font.Font(None, 40)
     text_coord = 100
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('white'))
@@ -71,36 +76,7 @@ def start_screen():
         clock.tick(FPS)
 
 
-def take_level():
-    intro_text = [f'Нажмите {os.listdir(os.path.join("levels")).index(i) + 1}, чтобы выбрать уровень ' + i[:-4]
-                  for i in os.listdir(os.path.join("levels"))]
-
-    fon = pygame.transform.scale(generate.load_image('fon.jpg'), (800, 400))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 40)
-    text_coord = 100
-    for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('white'))
-        intro_rect = string_rendered.get_rect()
-        text_coord += 10
-        intro_rect.top = text_coord
-        intro_rect.x = 10
-        text_coord += intro_rect.height
-        screen.blit(string_rendered, intro_rect)
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            elif event.type == pygame.KEYDOWN:
-                return pygame.key.get_pressed().index(True)
-        pygame.display.flip()
-        clock.tick(FPS)
-
-
-def final_screen(time):
-    line = f'Вы прошли уровень за {round(time, 2)} секунд!'
-
+def last_title(line):
     fon = pygame.transform.scale(generate.load_image('fon.jpg'), (810, 410))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 50)
@@ -119,9 +95,7 @@ def final_screen(time):
         pygame.display.flip()
 
 
-def main():
-    start_screen()
-
+def render():
     # Если нажата кнопка 1, то генерируем уровень
     if clicked_button == 1:
         # создадим лестницы,
@@ -135,7 +109,7 @@ def main():
                     filled[(x, i + 1)] = 'ladder'
 
         # монетки,
-        for i in range(3):
+        while len(moneys) < 3:
             x = random.randint(1, 15)
             y = random.randrange(0, 6, 2)
             if (x, y) not in filled.keys():
@@ -155,7 +129,7 @@ def main():
         while running:
             # "Защита от дурака" - проверка, что выбранный уровень существует
             try:
-                num = take_level() - 30
+                num = levels.take_level() - 30
                 level = levels.load_level(os.listdir(os.path.join("levels"))[num])
                 # Выстраивание уровня по блокам
                 for y in range(len(level)):
@@ -173,43 +147,68 @@ def main():
             except IndexError:
                 print('Нажмите корректную клавишу')
 
-    # под конец создадим игрока
-    player = generate.Player(all_sprites)
-
     # и заполним остаточные значения в filled значениями air
-    for i in range(1, 16):
-        for j in range(1, 7):
+    for i in range(8):
+        table.append([])
+        for j in range(16):
             try:
-                filled[(i, j)]
+                filled[(j, i)]
             except KeyError:
-                filled[(i, j)] = 'air'
+                filled[(j, i)] = 'air'
+            table[i].append(filled[j, i])
+
+
+def main():
+    first_title()
+
+    render()
+    # под конец создадим игрока и бота
+    player = generate.Player(all_sprites)
+    robots.add(generate.Bots(all_sprites), robots)
+
+    generate.get_field(table)
+
+    # Мы готовы начинать игру!
     start_time = timeit.default_timer()
     running = True
     while running:
         for event in pygame.event.get():
             # Проверка на нажатие клавиш движения
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RIGHT and filled[player_cords[0] // 50 + 1, player_cords[1] // 50] != 'block':
-                    player.rect.left += dist
-                    player_cords[0] += dist
-                elif event.key == pygame.K_LEFT and filled[player_cords[0] // 50 - 1, player_cords[1] // 50] != 'block':
-                    player.rect.left -= dist
-                    player_cords[0] -= dist
-                elif (event.key == pygame.K_DOWN and
-                      filled[player_cords[0] // 50, player_cords[1] // 50 + 1] == 'ladder'):
-                    player.rect.top += dist
-                    player_cords[1] += dist
-                elif event.key == pygame.K_UP and pygame.sprite.spritecollideany(player, ladders):
-                    player.rect.top -= dist
-                    player_cords[1] -= dist
+                try:
+                    if (event.key == pygame.K_RIGHT and
+                            filled[player_cords[0] // 50 + 1, player_cords[1] // 50] != 'block'):
+                        player.rect.left += dist
+                        player_cords[0] += dist
+                    elif (event.key == pygame.K_LEFT and
+                          filled[player_cords[0] // 50 - 1, player_cords[1] // 50] != 'block'):
+                        player.rect.left -= dist
+                        player_cords[0] -= dist
+                    elif (event.key == pygame.K_DOWN and
+                          filled[player_cords[0] // 50, player_cords[1] // 50 + 1] == 'ladder'):
+                        player.rect.top += dist
+                        player_cords[1] += dist
+                    elif event.key == pygame.K_UP and pygame.sprite.spritecollideany(player, ladders):
+                        player.rect.top -= dist
+                        player_cords[1] -= dist
+                except KeyError:
+                    pass
             # Проверка на выход из игры
             elif event.type == pygame.QUIT:
                 running = False
 
+            generate.update(player_cords)
+        #bots.go()
+
         if pygame.sprite.spritecollideany(player, moneys):
             money = pygame.sprite.spritecollide(player, moneys, True)[0]
         if not moneys:
-            final_screen(timeit.default_timer() - start_time)
+            last_title(f'Вы прошли уровень за {round(timeit.default_timer() - start_time, 2)} секунд!')
+            running = False
+
+        if pygame.sprite.spritecollideany(player, robots):
+            last_title(f'Вы умерли! Время выживания: {round(timeit.default_timer() - start_time, 2)} секунд')
+            running = False
 
         screen.fill((0, 0, 0), (5, 5, screen.get_size()[0] - 10, screen.get_size()[1] - 10))
         board.render(screen)
