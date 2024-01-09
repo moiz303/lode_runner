@@ -1,13 +1,31 @@
-import pygame
 from generate import Game
 
 
 class Bot(Game):
-    def __init__(self):
+    def __init__(self, field, bot_cords):
         super().__init__()
-        self.selected_cell = None
+        self.selected_cell = bot_cords
         self.ticks = 0
         self.path = []
+        self.board = field
+
+    # cell - кортеж (x, y)
+    def get_cell(self, cords):
+        cell_x = (cords[0] - self.left) // self.cell_size
+        cell_y = (cords[1] + 1 - self.top) // self.cell_size
+        return cell_x, cell_y
+
+    def get_click(self, cords):
+        cell = self.get_cell(cords)
+        if cell and cell < (self.width, self.height):
+            return self.on_click(cell)
+
+    def on_click(self, cell):
+        x, y = cell
+        x2, y2 = self.selected_cell
+        if self.has_path(x2, y2, x, y):
+            self.path = self.get_path(x2, y2, x, y)
+        self.go_bot(self.path)
 
     def get_distances(self, start):
         v = [(start[0], start[1])]
@@ -21,7 +39,7 @@ class Bot(Game):
                         continue
                     if x + dx < 0 or x + dx >= self.width or y + dy < 0 or y + dy >= self.height:
                         continue
-                    if self.board[x + dx][y + dy] != 'block':
+                    if self.board[y + dy][x + dx] == 0:
                         dn = d.get((x + dx, y + dy), -1)
                         if dn == -1:
                             d[(x + dx, y + dy)] = d[(x, y)] + 1
@@ -47,43 +65,22 @@ class Bot(Game):
         path.reverse()
         return path[1:]
 
-    def updata(self):
-        if self.ticks == 10:
+    def update(self):
+        if self.ticks == 15:
             if len(self.path) > 0:
                 x, y = self.path.pop(0)
-                self.board[x][y] = 1
-                self.board[self.selected_cell[0]][self.selected_cell[1]] = 0
+                self.board[y][x] = 1
+                self.board[self.selected_cell[1]][self.selected_cell[0]] = 0
                 self.selected_cell = x, y
                 if len(self.path) == 0:
-                    self.selected_cell = None
+                    return
             self.ticks = 0
         self.ticks += 1
 
     def has_path(self, x1, y1, x2, y2):
-        d = self.get_distances((x1, y1))
-        dist = d.get((x2, y2), -1)
+        d = self.get_distances((x2, y2))
+        dist = d.get((x1, y1), -1)
         return dist >= 0
 
-
-def go():
-    pygame.init()
-    clock = pygame.time.Clock()
-
-    board = Bot()
-
-    run = True
-    while run:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-
-        board.get_click()
-
-        board.updata()
-        pygame.display.flip()
-        clock.tick(50)
-    pygame.quit()
-
-
-if __name__ == '__main__':
-    go()
+    def go_bot(self, path):
+        pass

@@ -95,18 +95,19 @@ def last_title(line):
         pygame.display.flip()
 
 
-def render():
+def render_field():
     # Если нажата кнопка 1, то генерируем уровень
     if clicked_button == 1:
         # создадим лестницы,
         for i in range(1, 6, 2):
             for j in range(2):
-                x = random.randint(1, 15)
-                if (x, i) not in filled.keys() and (x + 1, i) not in filled.keys():
-                    ladders.add(generate.Ladder(x, i, all_sprites), ladders)
-                    ladders.add(generate.Ladder(x, i + 1, all_sprites), ladders)
-                    filled[(x, i)] = 'ladder'
-                    filled[(x, i + 1)] = 'ladder'
+                x = random.randint(2, 15)
+                if (x, i) in filled.keys() or (x + 1, i) in filled.keys():
+                    x -= 1
+                ladders.add(generate.Ladder(x, i, all_sprites), ladders)
+                ladders.add(generate.Ladder(x, i + 1, all_sprites), ladders)
+                filled[(x, i)] = 'ladder'
+                filled[(x, i + 1)] = 'ladder'
 
         # монетки,
         while len(moneys) < 3:
@@ -155,18 +156,22 @@ def render():
                 filled[(j, i)]
             except KeyError:
                 filled[(j, i)] = 'air'
-            table[i].append(filled[j, i])
+            if filled[j, i] == 'block':
+                table[i].append(1)
+            else:
+                table[i].append(0)
 
 
 def main():
     first_title()
 
-    render()
+    render_field()
+
     # под конец создадим игрока и бота
     player = generate.Player(all_sprites)
-    robots.add(generate.Bots(all_sprites), robots)
 
-    generate.get_field(table)
+    robot = generate.Bots(all_sprites)
+    robots.add(robot, robots)
 
     # Мы готовы начинать игру!
     start_time = timeit.default_timer()
@@ -197,9 +202,6 @@ def main():
             elif event.type == pygame.QUIT:
                 running = False
 
-            generate.update(player_cords)
-        #bots.go()
-
         if pygame.sprite.spritecollideany(player, moneys):
             money = pygame.sprite.spritecollide(player, moneys, True)[0]
         if not moneys:
@@ -210,10 +212,16 @@ def main():
             last_title(f'Вы умерли! Время выживания: {round(timeit.default_timer() - start_time, 2)} секунд')
             running = False
 
+        path = bots.Bot(table, (robot.rect.x // 50, robot.rect.y // 50)).get_click(player_cords)
+
         screen.fill((0, 0, 0), (5, 5, screen.get_size()[0] - 10, screen.get_size()[1] - 10))
         board.render(screen)
+
+        bots.Bot(table, (robot.rect.x, robot.rect.y)).update()
+
         all_sprites.draw(screen)
         pygame.display.flip()
+        clock.tick(50)
     pygame.quit()
 
 
