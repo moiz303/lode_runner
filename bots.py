@@ -1,3 +1,6 @@
+import asyncio
+import time
+
 from generate import Game
 
 
@@ -15,17 +18,17 @@ class Bot(Game):
         cell_y = (cords[1] + 1 - self.top) // self.cell_size
         return cell_x, cell_y
 
-    def get_click(self, cords):
+    def get_click(self, cords, spr):
         cell = self.get_cell(cords)
         if cell and cell < (self.width, self.height):
-            return self.on_click(cell)
+            return self.on_click(cell, spr)
 
-    def on_click(self, cell):
+    def on_click(self, cell, spr):
         x, y = cell
         x2, y2 = self.selected_cell
         if self.has_path(x2, y2, x, y):
             self.path = self.get_path(x2, y2, x, y)
-        self.go_bot(self.path)
+        self.go_bot(self.path, spr)
 
     def get_distances(self, start):
         v = [(start[0], start[1])]
@@ -82,5 +85,18 @@ class Bot(Game):
         dist = d.get((x1, y1), -1)
         return dist >= 0
 
-    def go_bot(self, path):
-        pass
+    def go_bot(self, path, sprite):
+        try:
+            next_x, next_y = path[0]
+            if next_x == sprite.rect.x // 50:
+                if next_y < sprite.rect.y // 50:
+                    sprite.rect.top -= 50
+                else:
+                    sprite.rect.top += 50
+            else:
+                if next_x < sprite.rect.x // 50:
+                    sprite.rect.left -= 50
+                else:
+                    sprite.rect.left += 50
+        except IndexError:
+            return

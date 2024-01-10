@@ -1,6 +1,6 @@
+import asyncio
 import timeit
 import pygame
-import sys
 import os
 import random
 import generate
@@ -8,9 +8,6 @@ import levels
 import bots
 
 
-pygame.init()
-screen = pygame.display.set_mode((810, 410))
-pygame.display.set_caption('Lode Runner')
 clock = pygame.time.Clock()
 player_cords = [5, 304]
 dist = 50
@@ -28,11 +25,6 @@ robots = pygame.sprite.Group()
 
 
 FPS = 50
-
-
-def terminate():
-    pygame.quit()
-    sys.exit()
 
 
 def first_title():
@@ -57,7 +49,7 @@ def first_title():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                terminate()
+                pygame.quit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_1:
                     board = generate.Game()
@@ -89,7 +81,7 @@ def last_title(line):
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                terminate()
+                pygame.quit()
             elif event.type == pygame.KEYDOWN:
                 return
         pygame.display.flip()
@@ -162,24 +154,20 @@ def render_field():
                 table[i].append(0)
 
 
-def main():
-    first_title()
-
-    render_field()
-
-    # под конец создадим игрока и бота
-    player = generate.Player(all_sprites)
-
-    robot = generate.Bots(all_sprites)
-    robots.add(robot, robots)
-
+# Игрок и бот должны двигаться асинхронно
+async def gamer():
+    global player
     # Мы готовы начинать игру!
     start_time = timeit.default_timer()
     running = True
     while running:
         for event in pygame.event.get():
+            # Проверка на выход из игры
+            if event.type == pygame.QUIT:
+                running = False
+
             # Проверка на нажатие клавиш движения
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN:
                 try:
                     if (event.key == pygame.K_RIGHT and
                             filled[player_cords[0] // 50 + 1, player_cords[1] // 50] != 'block'):
@@ -196,11 +184,10 @@ def main():
                     elif event.key == pygame.K_UP and pygame.sprite.spritecollideany(player, ladders):
                         player.rect.top -= dist
                         player_cords[1] -= dist
+                    else:
+                        print('Что, простите?')
                 except KeyError:
                     pass
-            # Проверка на выход из игры
-            elif event.type == pygame.QUIT:
-                running = False
 
         if pygame.sprite.spritecollideany(player, moneys):
             money = pygame.sprite.spritecollide(player, moneys, True)[0]
@@ -210,20 +197,53 @@ def main():
 
         if pygame.sprite.spritecollideany(player, robots):
             last_title(f'Вы умерли! Время выживания: {round(timeit.default_timer() - start_time, 2)} секунд')
-            running = False
-
-        path = bots.Bot(table, (robot.rect.x // 50, robot.rect.y // 50)).get_click(player_cords)
 
         screen.fill((0, 0, 0), (5, 5, screen.get_size()[0] - 10, screen.get_size()[1] - 10))
         board.render(screen)
 
-        bots.Bot(table, (robot.rect.x, robot.rect.y)).update()
-
         all_sprites.draw(screen)
         pygame.display.flip()
-        clock.tick(50)
+        await asyncio.sleep(1 / FPS)
+        clock.tick(FPS)
     pygame.quit()
 
 
+# Асинхронный бот
+async def bots_going():
+    global robot
+    run = True
+    while run:
+        await asyncio.sleep(1)
+        for event in pygame.event.get():
+            if event == pygame.QUIT:
+                run = False
+        bots.Bot(table, (robot.rect.x // 50, robot.rect.y // 50)).get_click(player_cords, robot)
+        bots.Bot(table, (robot.rect.x, robot.rect.y)).update()
+        if pygame.sprite.spritecollideany(player, robots):
+            run = False
+        elif not moneys:
+            run = False
+    pygame.quit()
+
+
+async def main():
+    global player, robot, screen
+    pygame.init()
+    screen = pygame.display.set_mode((810, 410))
+    pygame.display.set_caption('Lode Runner')
+
+    first_title()
+
+    render_field()
+
+    # создадим игрока и бота
+    player = generate.Player(all_sprites)
+
+    robot = generate.Bots(all_sprites)
+    robots.add(robot, robots)
+
+    # Сделаем два таска: один для игрока, другой для бота
+    await asyncio.gather(gamer(), bots_going())
+
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
