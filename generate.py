@@ -81,20 +81,50 @@ class Ladder(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, group):
+    def __init__(self, group, sheet, x, y):
         super().__init__(group)
-        self.image = load_image("player.xcf")
+        self.frames = []
+        self.cut_sheet(sheet, 4, 1)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
-        self.rect.x = 5
-        self.rect.y = 304
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 class Bots(pygame.sprite.Sprite):
-    def __init__(self, group):
+    def __init__(self, group, sheet, x, y):
         super().__init__(group)
-        self.image = load_image("bot.xcf")
+        self.frames = []
+        self.cut_sheet(sheet, 3, 1)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
-        self.rect.x = 405
-        self.rect.y = 5
+        self.rect = self.rect.move(x, y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]

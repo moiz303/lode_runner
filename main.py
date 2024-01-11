@@ -19,6 +19,7 @@ filled = {(5, 305): 'air', (405, 5): 'air'}
 
 # И список самих блоков для бота
 table = []
+running = True
 
 blocks, ladders, moneys = pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
 robots = pygame.sprite.Group()
@@ -81,7 +82,7 @@ def last_title(line):
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
+                return
             elif event.type == pygame.KEYDOWN:
                 return
         pygame.display.flip()
@@ -156,10 +157,10 @@ def render_field():
 
 # Игрок и бот должны двигаться асинхронно
 async def gamer():
-    global player
+    global player, running, pl_sheet
     # Мы готовы начинать игру!
+    cou = 0
     start_time = timeit.default_timer()
-    running = True
     while running:
         for event in pygame.event.get():
             # Проверка на выход из игры
@@ -184,19 +185,20 @@ async def gamer():
                     elif event.key == pygame.K_UP and pygame.sprite.spritecollideany(player, ladders):
                         player.rect.top -= dist
                         player_cords[1] -= dist
-                    else:
-                        print('Что, простите?')
                 except KeyError:
                     pass
 
+        # Если столкнулись с монеткой - "собираем" её, если монет не осталось - победа!
         if pygame.sprite.spritecollideany(player, moneys):
             money = pygame.sprite.spritecollide(player, moneys, True)[0]
         if not moneys:
             last_title(f'Вы прошли уровень за {round(timeit.default_timer() - start_time, 2)} секунд!')
             running = False
 
+        # Если столкнулись с роботом - проигрыш!
         if pygame.sprite.spritecollideany(player, robots):
             last_title(f'Вы умерли! Время выживания: {round(timeit.default_timer() - start_time, 2)} секунд')
+            running = False
 
         screen.fill((0, 0, 0), (5, 5, screen.get_size()[0] - 10, screen.get_size()[1] - 10))
         board.render(screen)
@@ -204,45 +206,53 @@ async def gamer():
         all_sprites.draw(screen)
         pygame.display.flip()
         await asyncio.sleep(1 / FPS)
+        if cou == 5:
+            player.update()
+            cou = 0
         clock.tick(FPS)
+        cou += 1
     pygame.quit()
 
 
 # Асинхронный бот
 async def bots_going():
-    global robot
-    run = True
-    while run:
-        await asyncio.sleep(1)
-        for event in pygame.event.get():
-            if event == pygame.QUIT:
-                run = False
-        bots.Bot(table, (robot.rect.x // 50, robot.rect.y // 50)).get_click(player_cords, robot)
-        bots.Bot(table, (robot.rect.x, robot.rect.y)).update()
+    global robot, running
+    cou = 0
+    while running:
         if pygame.sprite.spritecollideany(player, robots):
-            run = False
+            running = False
         elif not moneys:
-            run = False
+            running = False
+        else:
+            await asyncio.sleep(0.5)
+            bots.Bot(table, (robot.rect.x // 50, robot.rect.y // 50)).get_click(player_cords, robot)
+            bots.Bot(table, (robot.rect.x, robot.rect.y)).update()
+        if cou == 5:
+            robot.update()
+            cou = 0
+        cou += 1
     pygame.quit()
 
 
 async def main():
-    global player, robot, screen
+    global player, robot, screen, pl_sheet
     pygame.init()
     screen = pygame.display.set_mode((810, 410))
     pygame.display.set_caption('Lode Runner')
+    pl_sheet = generate.load_image('player_right_animations.xcf')
+    bot_sheet = generate.load_image('bot_right_animations.xcf')
 
     first_title()
 
     render_field()
 
     # создадим игрока и бота
-    player = generate.Player(all_sprites)
+    player = generate.Player(all_sprites, pl_sheet, 5, 304)
 
-    robot = generate.Bots(all_sprites)
+    robot = generate.Bots(all_sprites, bot_sheet, 405, 5)
     robots.add(robot, robots)
 
-    # Сделаем два таска: один для игрока, другой для бота
+    # Сделаем два таска - один для игрока, другой для бота - и запустим их одновременно
     await asyncio.gather(gamer(), bots_going())
 
 if __name__ == '__main__':

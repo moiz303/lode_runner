@@ -1,7 +1,6 @@
 import pygame
 import os
 import generate
-import main
 
 
 screen = pygame.display.set_mode((810, 410))
@@ -40,7 +39,7 @@ def take_level() -> int:
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                main.terminate()
+                pygame.quit()
             elif event.type == pygame.KEYDOWN:
                 return pygame.key.get_pressed().index(True)
         pygame.display.flip()

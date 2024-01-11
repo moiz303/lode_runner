@@ -1,6 +1,3 @@
-import asyncio
-import time
-
 from generate import Game
 
 
