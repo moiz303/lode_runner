@@ -29,6 +29,7 @@ FPS = 50
 
 
 def first_title():
+    """Начальный экран"""
     global board, clicked_button
     intro_text = ["Начнём игру",
                   "Чтобы сгенерировать уровень нажмите 1",
@@ -70,6 +71,7 @@ def first_title():
 
 
 def last_title(line):
+    """Последний экран"""
     fon = pygame.transform.scale(generate.load_image('fon.jpg'), (810, 410))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 50)
@@ -89,6 +91,7 @@ def last_title(line):
 
 
 def render_field():
+    """Генрация поля"""
     # Если нажата кнопка 1, то генерируем уровень
     if clicked_button == 1:
         # создадим лестницы,
@@ -96,6 +99,7 @@ def render_field():
             for j in range(2):
                 x = random.randint(2, 15)
                 if (x, i) in filled.keys() or (x + 1, i) in filled.keys():
+                    # Проверка на то, что на этом блоке уже есть что-то
                     x -= 1
                 ladders.add(generate.Ladder(x, i, all_sprites), ladders)
                 ladders.add(generate.Ladder(x, i + 1, all_sprites), ladders)
@@ -106,14 +110,14 @@ def render_field():
         while len(moneys) < 3:
             x = random.randint(1, 15)
             y = random.randrange(0, 6, 2)
-            if (x, y) not in filled.keys():
+            if (x, y) not in filled.keys():  # Проверка на то, что на этом блоке уже есть что-то
                 moneys.add(generate.Money(x, y, all_sprites), moneys)
                 filled[(x, y)] = 'money'
 
         # и блоки
         for i in range(1, 8, 2):
             for j in range(16):
-                if (j, i) not in filled.keys():
+                if (j, i) not in filled.keys():  # Проверка на то, что на этом блоке уже есть что-то
                     blocks.add(generate.Blocks(j, i, all_sprites), blocks)
                     filled[(j, i)] = 'block'
 
@@ -159,7 +163,6 @@ def render_field():
 async def gamer():
     global player, running, pl_sheet
     # Мы готовы начинать игру!
-    cou = 0
     start_time = timeit.default_timer()
     while running:
         for event in pygame.event.get():
@@ -172,11 +175,15 @@ async def gamer():
                 try:
                     if (event.key == pygame.K_RIGHT and
                             filled[player_cords[0] // 50 + 1, player_cords[1] // 50] != 'block'):
+                        player.cut_sheet(generate.load_image('player_right_animations.xcf'), 4, 1)
                         player.rect.left += dist
+                        player.update()
                         player_cords[0] += dist
                     elif (event.key == pygame.K_LEFT and
                           filled[player_cords[0] // 50 - 1, player_cords[1] // 50] != 'block'):
+                        player.cut_sheet(generate.load_image('player_left_animations.xcf'), 4, 1)
                         player.rect.left -= dist
+                        player.update()
                         player_cords[0] -= dist
                     elif (event.key == pygame.K_DOWN and
                           filled[player_cords[0] // 50, player_cords[1] // 50 + 1] == 'ladder'):
@@ -188,10 +195,11 @@ async def gamer():
                 except KeyError:
                     pass
 
-        # Если столкнулись с монеткой - "собираем" её, если монет не осталось - победа!
+        # Если столкнулись с монеткой - "собираем" её
         if pygame.sprite.spritecollideany(player, moneys):
             money = pygame.sprite.spritecollide(player, moneys, True)[0]
-        if not moneys:
+
+        if not moneys:  # Eсли монет не осталось - победа!
             last_title(f'Вы прошли уровень за {round(timeit.default_timer() - start_time, 2)} секунд!')
             running = False
 
@@ -206,18 +214,13 @@ async def gamer():
         all_sprites.draw(screen)
         pygame.display.flip()
         await asyncio.sleep(1 / FPS)
-        if cou == 5:
-            player.update()
-            cou = 0
         clock.tick(FPS)
-        cou += 1
     pygame.quit()
 
 
 # Асинхронный бот
 async def bots_going():
     global robot, running
-    cou = 0
     while running:
         if pygame.sprite.spritecollideany(player, robots):
             running = False
@@ -227,15 +230,12 @@ async def bots_going():
             await asyncio.sleep(0.5)
             bots.Bot(table, (robot.rect.x // 50, robot.rect.y // 50)).get_click(player_cords, robot)
             bots.Bot(table, (robot.rect.x, robot.rect.y)).update()
-        if cou == 5:
-            robot.update()
-            cou = 0
-        cou += 1
     pygame.quit()
 
 
 async def main():
     global player, robot, screen, pl_sheet
+    # Задание начальных значений
     pygame.init()
     screen = pygame.display.set_mode((810, 410))
     pygame.display.set_caption('Lode Runner')

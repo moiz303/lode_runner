@@ -1,5 +1,5 @@
-import pygame
 import os
+import pygame
 import sys
 
 # создадим группу, содержащую все спрайты
@@ -28,8 +28,8 @@ class Game:
         self.bot_cords = [8, 0]
 
     def render(self, screen):
-        for y in range(8):
-            for x in range(16):
+        for y in range(self.height):
+            for x in range(self.width):
                 pygame.draw.rect(screen, pygame.Color(255, 255, 255), (
                     x * self.cell_size + self.left, y * self.cell_size + self.top, self.cell_size,
                     self.cell_size), 1)
@@ -42,6 +42,7 @@ class Game:
 
 
 class Blocks(pygame.sprite.Sprite):
+    """Генерация блоков"""
     def __init__(self, x, y, group):
         super().__init__(group)
         self.image = load_image("block.xcf")
@@ -55,6 +56,7 @@ class Blocks(pygame.sprite.Sprite):
 
 
 class Money(pygame.sprite.Sprite):
+    """Генерация монеток"""
     def __init__(self, x, y, group):
         super().__init__(group)
         self.image = load_image("money.xcf")
@@ -68,6 +70,7 @@ class Money(pygame.sprite.Sprite):
 
 
 class Ladder(pygame.sprite.Sprite):
+    """Генерация лестниц"""
     def __init__(self, x, y, group):
         super().__init__(group)
         self.image = load_image("ladder.xcf")
@@ -81,6 +84,7 @@ class Ladder(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
+    """Создание игрока с анимациями"""
     def __init__(self, group, sheet, x, y):
         super().__init__(group)
         self.frames = []
@@ -92,13 +96,12 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.rect.move(x, y)
 
     def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
+        self.frames = []
+        self.recti = pygame.Rect(0, 0, sheet.get_width() // columns, sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
+                frame_location = (self.recti.w * i, self.recti.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(frame_location, self.recti.size)))
 
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
@@ -106,6 +109,7 @@ class Player(pygame.sprite.Sprite):
 
 
 class Bots(pygame.sprite.Sprite):
+    """Создание бота с его анимациями"""
     def __init__(self, group, sheet, x, y):
         super().__init__(group)
         self.frames = []
@@ -117,13 +121,12 @@ class Bots(pygame.sprite.Sprite):
         self.rect = self.rect.move(x, y)
 
     def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
+        self.frames = []
+        self.recti = pygame.Rect(0, 0, sheet.get_width() // columns, sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
+                frame_location = (self.recti.w * i, self.recti.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(frame_location, self.recti.size)))
 
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)

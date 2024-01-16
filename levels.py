@@ -20,6 +20,7 @@ def load_level(filename) -> list:
 
 
 def take_level() -> int:
+    """Загрузка уровня из имеющихся"""
     intro_text = [f'Нажмите {os.listdir(os.path.join("levels")).index(i) + 1}, чтобы выбрать уровень ' + i[:-4]
                   for i in os.listdir(os.path.join("levels"))]
 
