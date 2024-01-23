@@ -102,12 +102,12 @@ class Bot(Game):
                     sprite.rect.top += 50
             else:
                 if next_x < sprite.rect.x // 50:
-                    sprite.rect.left -= 50
                     sprite.cut_sheet(load_image('bot_left_animations.xcf'), 3, 1)
+                    sprite.rect.left -= 50
                     sprite.update()
                 else:
-                    sprite.rect.left += 50
                     sprite.cut_sheet(load_image('bot_right_animations.xcf'), 3, 1)
+                    sprite.rect.left += 50
                     sprite.update()
         except IndexError:
             return

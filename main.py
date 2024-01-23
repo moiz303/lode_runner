@@ -1,12 +1,13 @@
 import asyncio
-import timeit
-import pygame
 import os
 import random
+import timeit
+
+import pygame
+
+import bots
 import generate
 import levels
-import bots
-
 
 clock = pygame.time.Clock()
 player_cords = [5, 304]
@@ -23,7 +24,6 @@ running = True
 
 blocks, ladders, moneys = pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
 robots = pygame.sprite.Group()
-
 
 FPS = 50
 
@@ -176,14 +176,30 @@ async def gamer():
                     if (event.key == pygame.K_RIGHT and
                             filled[player_cords[0] // 50 + 1, player_cords[1] // 50] != 'block'):
                         player.cut_sheet(generate.load_image('player_right_animations.xcf'), 4, 1)
-                        player.rect.left += dist
-                        player.update()
+                        for _ in range(4):
+                            player.rect.left += 12
+                            player.update()
+                            screen.fill((0, 0, 0), (5, 5, screen.get_size()[0] - 10,
+                                                    screen.get_size()[1] - 10))
+                            board.render(screen)
+                            all_sprites.draw(screen)
+                            pygame.display.flip()
+                            clock.tick(FPS - 10)
+                        player.rect.left += 2
                         player_cords[0] += dist
                     elif (event.key == pygame.K_LEFT and
                           filled[player_cords[0] // 50 - 1, player_cords[1] // 50] != 'block'):
                         player.cut_sheet(generate.load_image('player_left_animations.xcf'), 4, 1)
-                        player.rect.left -= dist
-                        player.update()
+                        for _ in range(4):
+                            player.rect.left -= 12
+                            player.update()
+                            screen.fill((0, 0, 0), (5, 5, screen.get_size()[0] - 10,
+                                                    screen.get_size()[1] - 10))
+                            board.render(screen)
+                            all_sprites.draw(screen)
+                            pygame.display.flip()
+                            clock.tick(FPS - 10)
+                        player.rect.left -= 2
                         player_cords[0] -= dist
                     elif (event.key == pygame.K_DOWN and
                           filled[player_cords[0] // 50, player_cords[1] // 50 + 1] == 'ladder'):
@@ -254,6 +270,7 @@ async def main():
 
     # Сделаем два таска - один для игрока, другой для бота - и запустим их одновременно
     await asyncio.gather(gamer(), bots_going())
+
 
 if __name__ == '__main__':
     asyncio.run(main())
