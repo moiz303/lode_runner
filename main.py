@@ -244,7 +244,8 @@ async def bots_going():
             running = False
         else:
             await asyncio.sleep(0.5)
-            bots.Bot(table, (robot.rect.x // 50, robot.rect.y // 50)).get_click(player_cords, robot)
+            bots.Bot(table, (robot.rect.x // 50, robot.rect.y // 50)).get_click(player_cords, robot, screen,
+                                                                                board, all_sprites)
             bots.Bot(table, (robot.rect.x, robot.rect.y)).update()
     pygame.quit()
 

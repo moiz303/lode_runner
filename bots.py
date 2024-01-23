@@ -1,4 +1,5 @@
 from generate import Game, load_image
+import pygame
 
 
 class Bot(Game):
@@ -16,19 +17,19 @@ class Bot(Game):
         cell_y = (cords[1] + 1 - self.top) // self.cell_size
         return cell_x, cell_y
 
-    def get_click(self, cords, spr):
+    def get_click(self, cords, spr, scr, board, gr):
         """Находим клетку по клику"""
         cell = self.get_cell(cords)
         if cell and cell < (self.width, self.height):
-            return self.on_click(cell, spr)
+            return self.on_click(cell, spr, scr, board, gr)
 
-    def on_click(self, cell, spr):
+    def on_click(self, cell, spr, scr, board, gr):
         """Собственно, поиск пути и запуск по нему бота"""
         x, y = cell
         x2, y2 = self.selected_cell
         if self.has_path(x2, y2, x, y):
             self.path = self.get_path(x2, y2, x, y)
-        self.go_bot(self.path, spr)
+        self.go_bot(self.path, spr, scr, board, gr)
 
     def get_distances(self, start):
         """Ядро поиска пути -
@@ -91,9 +92,10 @@ class Bot(Game):
         dist = d.get((x1, y1), -1)
         return dist >= 0
 
-    def go_bot(self, path, sprite):
+    def go_bot(self, path, sprite, scr, board, gr):
         """Логика передвижения бота"""
         try:
+            clock = pygame.time.Clock()
             next_x, next_y = path[0]
             if next_x == sprite.rect.x // 50:
                 if next_y < sprite.rect.y // 50:
@@ -103,11 +105,25 @@ class Bot(Game):
             else:
                 if next_x < sprite.rect.x // 50:
                     sprite.cut_sheet(load_image('bot_left_animations.xcf'), 3, 1)
-                    sprite.rect.left -= 50
-                    sprite.update()
+                    for _ in range(3):
+                        sprite.rect.left -= 17
+                        sprite.update()
+                        scr.fill((0, 0, 0), (5, 5, scr.get_size()[0] - 10, scr.get_size()[1] - 10))
+                        board.render(scr)
+                        gr.draw(scr)
+                        pygame.display.flip()
+                        clock.tick(40)
+                    sprite.rect.left += 1
                 else:
                     sprite.cut_sheet(load_image('bot_right_animations.xcf'), 3, 1)
-                    sprite.rect.left += 50
-                    sprite.update()
+                    for _ in range(3):
+                        sprite.rect.left += 17
+                        sprite.update()
+                        scr.fill((0, 0, 0), (5, 5, scr.get_size()[0] - 10, scr.get_size()[1] - 10))
+                        board.render(scr)
+                        gr.draw(scr)
+                        pygame.display.flip()
+                        clock.tick(40)
+                    sprite.rect.left -= 1
         except IndexError:
             return
